@@ -1,0 +1,48 @@
+//Calculate area of forest loss
+
+//Define country boundary
+
+var countries = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017');
+var Brazil = countries.filter(ee.Filter.eq('country_na', 'Brazil'));
+ 
+var tree_cover_2021 = ee.Image('UMD/hansen/global_forest_change_2021_v1_9');
+ 
+var loss = tree_cover_2021.select('loss');
+var gain = tree_cover_2021.select('gain');
+ 
+var areaLoss = loss.multiply(ee.Image.pixelArea());
+var areaGain = gain.multiply(ee.Image.pixelArea());
+
+//Calculate the area of loss pixels in Brazil
+
+var losStats = areaLoss.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: Brazil.geometry(),
+  scale: 30,
+  maxPixels: 1e11
+});
+
+print('Area lost in Brazil:', losStats.get('loss'), 'square meters');
+
+var Area_loss_ha = ee.Number(losStats).divide(10000);
+print ('Area (ha) 2021', Area_loss_ha);
+
+//Calculate the area of gain oixels
+
+var gainStats = areaGain.reduceRegion({
+  reducer: ee.Reducer.sum(),
+  geometry: Brazil.geometry(),
+  scale: 30,
+  maxPixels: 1e11
+});
+
+print('Area gain in Brazil:', gainStats.get('gain'), 'square meters');
+
+var Area_gain_ha = ee.Number(gainStats).divide(10000);
+print ('Area (ha) 2021"', Area_gain_ha);
+
+//Display the data
+
+//Display map
+Map.centerObject(Brazil, 7);
+Map.addLayer(ee.Image().paint(Brazil, 0, 1), {palette: ['grey']}, 'Brazil');
